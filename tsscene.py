@@ -50,6 +50,8 @@ class TSScene(QGraphicsScene):
 
     def removewave(self, handle):
         handle.pop(0).remove()
+        self.axes.relim()
+        self.axes.autoscale_view(True, True, True)
         self.canvas.draw()
 
 

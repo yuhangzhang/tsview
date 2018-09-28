@@ -66,8 +66,8 @@ class TSWindow(QWidget):
             self.visibleWave.pop(wavename, None)
         else:
             waveform = self.data.getwaveform(wavename)
-            curve = self.scene.displaywave(waveform)
-            self.visibleWave[wavename] = (waveform, curve)
+            handle = self.scene.displaywave(waveform)
+            self.visibleWave[wavename] = (waveform, handle)
 
 
     def setList(self,wlist):
