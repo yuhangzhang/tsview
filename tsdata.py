@@ -15,6 +15,7 @@ class TSData():
             self.loadFile(filename)
 
 
+
     def loadFile(self, filename):
         rawdata = pyasdf.ASDFDataSet(filename, mode="r")
 
@@ -35,31 +36,37 @@ class TSData():
 
     def getwaveform(self, waveformname, starttime=None, endtime=None):
         wave = self.dict[waveformname].getWave(starttime, endtime)
-        #return [wave.meta['starttime']+t for t in wave.times()], wave.data
-        return wave.times(), wave.data
+        return wave
 
-    def getwaveformshift(self, shift):
 
-        shift = (self.end-self.start+1)*shift
-
-        if self.start==0 and shift<0:
-            pass
-        elif self.end == len(self.currentdata) and shift >0:
-            pass
-        else:
-            if self.start+shift<0:
-                shift = -self.start
-            if self.end+shift>len(self.currentdata):
-                shift = len(self.currentdata) -self.end
-
-            self.start = int(self.start+shift)
-            self.end = int(self.end+shift)
-
-            self.times = np.array(self.currenttimes[self.start: self.end])
-            self.data = np.array(self.currentdata[self.start: self.end])
-
-        return [self.times,
-                self.data]
+    # def getwaveformshift(self, shift):
+    #
+    #     shift = (self.endtime-self.starttime+1)*shift
+    #     self.starttime = self.starttime + shift
+    #     self.endtime = self.endtime + shift
+    #
+    #     return [wave for wave in self.vis]
+    #
+    # def getwaveform
+    #
+    #     if self.start==0 and shift<0:
+    #         pass
+    #     elif self.end == len(self.currentdata) and shift >0:
+    #         pass
+    #     else:
+    #         if self.start+shift<0:
+    #             shift = -self.start
+    #         if self.end+shift>len(self.currentdata):
+    #             shift = len(self.currentdata) -self.end
+    #
+    #         self.start = int(self.start+shift)
+    #         self.end = int(self.end+shift)
+    #
+    #         self.times = np.array(self.currenttimes[self.start: self.end])
+    #         self.data = np.array(self.currentdata[self.start: self.end])
+    #
+    #     return [self.times,
+    #             self.data]
 
     def getwaveformresample(self, shift):
 

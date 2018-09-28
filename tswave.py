@@ -1,5 +1,6 @@
 import numpy as np
 import obspy.core.trace as trace
+from obspy.core.utcdatetime import UTCDateTime
 
 class TSWave():
     def __init__(self, trace):
@@ -20,12 +21,18 @@ class TSWave():
 
     def getWave(self, starttime=None, endtime=None, decirate=None):
 
-
         if starttime is None:
             starttime = self.trace.meta['starttime']
+        else:
+            starttime = UTCDateTime(starttime)
+
         if endtime is None:
             endtime = self.trace.meta['endtime']
+        else:
+            endtime = UTCDateTime(endtime)
 
+        if decirate is None:
+            decirate = round((endtime - starttime) / 1000)
 
 
 
@@ -35,21 +42,18 @@ class TSWave():
 
         if self.sampled == True:
             pass
+        elif decirate>16:
+            print('resampled', decirate)
+            self.sampledTrace = trace.Trace()
+            self.sampledTrace.data = self.trace.data[::decirate].copy()
+            self.sampledTrace.meta['delta'] = self.trace.meta['delta']*decirate
+            self.sampledTrace.meta['starttime'] = self.trace.meta['starttime']
+            self.sampledTrace = self.sampledTrace.decimate(1, True)
         else:
-            if self.decirate is None:
-                self.decirate = round((endtime-starttime)/1000)
+            print('resampled', decirate)
+            self.sampledTrace = self.trace.copy().decimate(self.decirate, True)
 
-            if self.decirate>16:
-                # tmpTrace = self.trace.copy()
-                # genor = tmpTrace.slide(0.1, self.decirate)
-                # self.sampledTrace = self.trace.copy().trim(self.trace.meta['starttime'],self.trace.meta['starttime'])
-                # for window in genor:
-                #     self.sampledTrace = self.sampledTrace.__add__(window)
-                self.decirate=16
-                self.sampledTrace = self.trace.copy().decimate(self.decirate, True)
-            else:
-                self.sampledTrace = self.trace.copy().decimate(self.decirate, True)
 
         self.sampled = True
 
-        return self.sampledTrace.trim(starttime, endtime)
+        return self.sampledTrace.slice(starttime, endtime)

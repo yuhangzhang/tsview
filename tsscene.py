@@ -13,7 +13,7 @@ from tsdata import TSData
 
 
 class TSScene(QGraphicsScene):
-    def __init__(self, width=16, height=4):
+    def __init__(self, width=14, height=4):
         super(TSScene, self).__init__()
 
 
@@ -27,7 +27,8 @@ class TSScene(QGraphicsScene):
         self.canvas = FigureCanvas(self.figure)
         self.plothandle=self.addWidget(self.canvas)
 
-        self.unitperpixel = 1.5 / self.figure.dpi / width
+        self.graphwidth = self.figure.dpi * width
+
 
         self.line = None
 
@@ -36,22 +37,56 @@ class TSScene(QGraphicsScene):
 
         self.axes = self.figure.add_subplot(111)
 
-    def displaywave(self, waveform):
+        self.visibleWave = {}
+
+        self.starttime = None
+        self.endtime = None
+
+    def togglewave(self, wavename, colorcode=0):
+        if wavename in self.visibleWave:
+            handle = (self.visibleWave[wavename])[1]
+            self.removewave(handle)
+            self.visibleWave.pop(wavename, None)
+        else:
+            waveform = self.data.getwaveform(wavename, self.starttime, self.endtime)
+            handle = self.displaywave(wavename, waveform, colorcode)
+            self.visibleWave[wavename] = (waveform, handle, colorcode)
+
+    def displaywave(self, wavename, waveform, colorcode):
 
         #self.axes.remove()
+        colorcode = 'C'+str(colorcode%10)
 
-        handle = self.axes.plot(waveform[0], waveform[1],linestyle="-")
-
+        times = [waveform.meta['starttime']+t for t in waveform.times()]
+        handle = self.axes.plot(times, waveform.data,linestyle="-", label=wavename, color=colorcode)
+        self.axes.legend()
         self.downx = None
 
         self.canvas.draw()
 
+        self.starttime = waveform.meta['starttime']
+        self.endtime = waveform.meta['endtime']
+
         return handle
+
+
+    def displaywaveshift(self, shift):
+        gap = self.endtime-self.starttime
+        self.starttime = self.starttime + gap * shift
+        self.endtime = self.endtime + gap * shift
+
+        tmplist = self.visibleWave.copy()
+        for wavename in tmplist:
+            self.togglewave(wavename)
+            self.togglewave(wavename, tmplist[wavename][2])
+
 
     def removewave(self, handle):
         handle.pop(0).remove()
         self.axes.relim()
         self.axes.autoscale_view(True, True, True)
+        if len(self.visibleWave)>0:
+            self.axes.legend()
         self.canvas.draw()
 
 
@@ -64,8 +99,8 @@ class TSScene(QGraphicsScene):
         if self.downx is not None:
             self.upx = event.scenePos().x()
             #print(self.downx, self.upx)
-            shift = (self.downx - self.upx) * self.unitperpixel
-            self.displaywave(self.data.getwaveformshift(shift))
+            shift = float(self.downx - self.upx) / self.graphwidth
+            self.displaywaveshift(shift)
             self.downx=self.upx
 
     def mouseReleaseEvent(self, event):
@@ -81,7 +116,10 @@ class TSScene(QGraphicsScene):
 
 
 
-    def setdata(self,wave):
-        #self.data = TSASDF(filename)
-        self.displaywave(wave)
+    def setdata(self, filename):
+        self.data = TSData(filename)
+        #self.displaywave(wave)
         #self.displaywave(self.data.getwaveform('AU.VIC099'))
+
+    def getList(self):
+        return self.data.getList()

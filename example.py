@@ -24,7 +24,6 @@ class TSWindow(QWidget):
         super(TSWindow,self).__init__()
 
         self.scene = TSScene()
-        self.data = None
         self.view = QGraphicsView(self.scene)
 
 
@@ -46,7 +45,7 @@ class TSWindow(QWidget):
         self.wavelistmodel = QStandardItemModel()
         buttonlayout.addWidget(self.wavelist)
 
-        self.visibleWave ={}
+
 
 
 
@@ -60,14 +59,9 @@ class TSWindow(QWidget):
 
     def showWave(self, index):
         wavename = self.wavelistmodel.itemFromIndex(index).text()
-        if wavename in self.visibleWave:
-            handle = (self.visibleWave[wavename])[1]
-            self.scene.removewave(handle)
-            self.visibleWave.pop(wavename, None)
-        else:
-            waveform = self.data.getwaveform(wavename)
-            handle = self.scene.displaywave(waveform)
-            self.visibleWave[wavename] = (waveform, handle)
+        self.scene.togglewave(wavename, index.row())
+
+
 
 
     def setList(self,wlist):
@@ -83,8 +77,9 @@ class TSWindow(QWidget):
         fname = QFileDialog.getOpenFileName(self, 'Open file','/g/data1/ha3/rakib/ausLAMP/Data/Output','asdf_file (*.h5)')
 
         if len(fname[0])>0:
-            self.data=TSData(fname[0])
-            self.setList(self.data.getList())
+            self.scene.setdata(fname[0])
+
+            self.setList(self.scene.getList())
 
 
 
