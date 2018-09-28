@@ -9,7 +9,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 import matplotlib.pyplot as plt
 
-from tsasdf import TSASDF
+from tsdata import TSData
 
 
 class TSScene(QGraphicsScene):
@@ -20,7 +20,7 @@ class TSScene(QGraphicsScene):
 
         self.pixmap = QPixmap()
 
-        self.figure = Figure(edgecolor='r', linewidth=2)
+        self.figure = Figure()
         self.figure.set_size_inches(width, height)
         self.axes = self.figure.add_subplot(111)
         self.figure.tight_layout()
@@ -32,19 +32,25 @@ class TSScene(QGraphicsScene):
         self.line = None
 
         self.downx = None
+        self.data = None
+
+        self.axes = self.figure.add_subplot(111)
 
     def displaywave(self, waveform):
 
+        #self.axes.remove()
 
-        self.axes.remove()
-        self.axes = self.figure.add_subplot(111)
-        self.axes.plot(waveform[0], waveform[1])
+        handle = self.axes.plot(waveform[0], waveform[1],linestyle="-")
 
         self.downx = None
 
         self.canvas.draw()
 
+        return handle
 
+    def removewave(self, handle):
+        handle.pop(0).remove()
+        self.canvas.draw()
 
 
     def mousePressEvent(self, event):
@@ -73,6 +79,7 @@ class TSScene(QGraphicsScene):
 
 
 
-    def setdata(self,filename):
-        self.data = TSASDF(filename)
-        self.displaywave(self.data.getwaveform('AU.VIC099'))
+    def setdata(self,wave):
+        #self.data = TSASDF(filename)
+        self.displaywave(wave)
+        #self.displaywave(self.data.getwaveform('AU.VIC099'))

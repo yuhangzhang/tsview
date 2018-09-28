@@ -2,45 +2,41 @@
 import pyasdf
 import obspy.core.trace as trace
 import numpy as np
+import time
 
-class TSASDF():
-    def __init__(self, filename):
-        self.rawdata = pyasdf.ASDFDataSet(filename, mode="r")
+from tswave import TSWave
 
-        self.start=0
-        self.end=100
-        self.decirate = 1
-        #self.times = trace.Trace(self.rawdata.waveforms[waveformname].raw_recording[0].times())
-        #self.data = trace.Trace(self.rawdata.waveforms[waveformname].raw_recording[0].data)
+class TSData():
+    def __init__(self, filename=None):
 
-        self.rawtimes = np.array(self.rawdata.waveforms['AU.VIC099'].raw_recording[0].times())#.copy()
-        self.rawdata = np.array(self.rawdata.waveforms['AU.VIC099'].raw_recording[0].data)#.copy()
+        self.dict = {}
 
-        self.currenttimes = self.rawtimes.copy()
-        self.currentdata = self.rawdata.copy()
-
-        self.currentwaveformname = ''
+        if filename is not None:
+            self.loadFile(filename)
 
 
+    def loadFile(self, filename):
+        rawdata = pyasdf.ASDFDataSet(filename, mode="r")
 
-    def getwaveform(self, waveformname, start=None, end=None):
-        if start is None:
-            start = self.start
-        else:
-            self.start = start
 
-        if end is None:
-            end = self.end
-        else:
-            self.end = end
+        for name in rawdata.waveforms.list():
+            for w  in rawdata.waveforms[name].raw_recording:
+                fullname = name+'.'+w.meta['location']+'.'+w.meta['channel']
 
-        if self.currentwaveformname != waveformname:
-            self.times = np.array(self.currenttimes[start: end])
-            self.data = np.array(self.currentdata[start: end])
-            self.currentwaveformname = waveformname
+                if fullname in self.dict:
+                    self.dict[fullname].expandWave(w)
+                else:
+                    self.dict[fullname] = TSWave(w)
 
-        return [self.times,
-                self.data]
+
+
+
+
+
+    def getwaveform(self, waveformname, starttime=None, endtime=None):
+        wave = self.dict[waveformname].getWave(starttime, endtime)
+        #return [wave.meta['starttime']+t for t in wave.times()], wave.data
+        return wave.times(), wave.data
 
     def getwaveformshift(self, shift):
 
@@ -74,9 +70,6 @@ class TSASDF():
         elif shift==0:
             pass
         else:
-            #print("shift=",shift)
-
-            #self.end = float(self.decirate) / (self.decirate + shift)
             decirate = int(self.decirate + shift)
 
             if decirate < 1:
@@ -99,7 +92,6 @@ class TSASDF():
             gap = self.end-self.start
             self.start = int(float(self.start) * self.decirate / decirate)
             self.end = self.start+gap
-            #self.end = int(float(self.end) * decirate / self.decirate)
             if self.end<1:
                 self.end=1
             if self.end>len(self.currentdata):
@@ -111,15 +103,14 @@ class TSASDF():
             self.times = np.array(self.currenttimes[self.start: self.end])
             self.data = np.array(self.currentdata[self.start: self.end])
 
-        #print('scale',self.start,self.end,self.decirate)
-
         return [self.times,
                 self.data]
 
-    def getwaveformnames(self):
-        return self.rawdata.waveforms.list()
 
     def recommendaspect(self):
         self.aspect = float(self.times.max()-self.times.min())/(self.data.max()-self.data.min())/10
 
         return self.aspect
+
+    def getList(self):
+        return list(self.dict)
