@@ -18,6 +18,11 @@ class TSWave():
     def expandWave(self, trace):
         self.trace = self.trace.__add__(trace)
 
+    def starttime(self):
+        return self.trace.meta['starttime']
+
+    def endtime(self):
+        return self.trace.meta['endtime']
 
     def getWave(self, starttime=None, endtime=None, decirate=None):
 
@@ -34,7 +39,8 @@ class TSWave():
         if decirate is None:
             decirate = round((endtime - starttime) / 1000)
 
-
+        if decirate<1:
+            decirate = 1
 
         if decirate != self.decirate:
             self.decirate = decirate
